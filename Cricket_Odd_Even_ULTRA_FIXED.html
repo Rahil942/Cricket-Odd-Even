@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cricket Odd Even — Ultra</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#07101f;--panel:#101d33;--panel2:#162844;--text:#fff;--muted:#a9b8cf;--accent:#45e0ff;--gold:#ffd45a;--good:#5cff9a;--bad:#ff667c}
+body{margin:0;min-height:100vh;font-family:Arial,Helvetica,sans-serif;background:radial-gradient(circle at 20% 0%,#20406f,#07101f 48%,#030711);color:var(--text);overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(120deg,transparent 0 45%,rgba(69,224,255,.04) 50%,transparent 55%);animation:shine 7s linear infinite}
+@keyframes shine{to{transform:translateX(30%)}}
+.game{max-width:720px;margin:auto;padding:18px;min-height:100vh}
+.screen{display:none}.screen.active{display:block}
+.panel{background:rgba(16,29,51,.88);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:20px;box-shadow:0 18px 55px rgba(0,0,0,.35);backdrop-filter:blur(8px)}
+.logo{text-align:center;font-weight:900;font-size:clamp(30px,8vw,54px);letter-spacing:2px;text-shadow:0 0 22px rgba(69,224,255,.35)}
+.logo span{color:var(--accent)}.subtitle{text-align:center;color:var(--muted);margin-top:6px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:20px}
+.mode,.diff{padding:18px;border-radius:18px;border:1px solid #294263;background:#13233d;color:white;text-align:left;cursor:pointer;transition:.18s}
+.mode:hover,.diff:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 10px 25px rgba(0,0,0,.25)}
+.mode b,.diff b{display:block;font-size:19px}.mode small,.diff small{display:block;color:var(--muted);margin-top:7px;line-height:1.35}
+button{font:inherit}
+.btn{border:0;border-radius:14px;padding:13px 17px;background:#243b61;color:#fff;font-weight:800;cursor:pointer;transition:.15s}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.1)}.primary{background:linear-gradient(135deg,#22c7e8,#4b75ff)}.danger{background:#552234}
+.topbar{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:14px}
+.badge{background:#172943;border:1px solid #2d4568;padding:8px 11px;border-radius:999px;font-size:13px;color:#c9d8ed}
+.scoreboard{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
+.stat{background:#0c1729;border-radius:16px;padding:12px;text-align:center;border:1px solid #203554}.stat b{display:block;font-size:25px;color:var(--accent)}.stat small{color:var(--muted)}
+.message{text-align:center;min-height:34px;font-size:20px;font-weight:900;margin:10px 0}
+.message.good{color:var(--good);animation:pop .35s ease}.message.bad{color:var(--bad);animation:shake .35s ease}.message.gold{color:var(--gold);animation:pop .35s ease}
+@keyframes pop{0%{transform:scale(.7);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+@keyframes shake{25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}}
+.choices{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-top:14px}
+.num{aspect-ratio:1;border:1px solid #355273;border-radius:16px;background:linear-gradient(145deg,#193253,#0f1d31);color:#fff;font-size:22px;font-weight:900;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.06);transition:.12s}
+.num:hover{transform:translateY(-3px);border-color:var(--accent)}.num:active{transform:scale(.92)}
+.hand{font-size:36px;display:block;line-height:1}.label{text-align:center;color:var(--muted);margin-top:12px}
+.tossBtns{display:flex;gap:12px;justify-content:center;margin-top:18px}.tossBtns .btn{min-width:130px}
+.hidden{display:none!important}
+.choiceRow{display:flex;gap:12px;justify-content:center;margin:16px 0}.choiceRow .btn{min-width:130px}
+.result{text-align:center;padding:30px 10px}.result h2{font-size:38px;margin:8px}.big{font-size:60px;font-weight:900;color:var(--gold);text-shadow:0 0 24px rgba(255,212,90,.3)}
+.highscores{margin-top:18px}.highscores h3{text-align:center}.hsrow{display:flex;justify-content:space-between;padding:9px 12px;border-bottom:1px solid #243752;color:#d7e3f4}
+.footer{text-align:center;color:#71829c;font-size:12px;margin:18px 0}
+.flash{animation:flash .45s ease}@keyframes flash{50%{box-shadow:0 0 0 8px rgba(69,224,255,.12)}}
+@media(max-width:560px){.grid{grid-template-columns:1fr}.choices{gap:7px}.num{font-size:19px}.hand{font-size:30px}.scoreboard{grid-template-columns:repeat(3,1fr)}.stat b{font-size:21px}.panel{padding:15px}}
+</style>
+</head>
+<body>
+<div class="game">
+
+<section id="home" class="screen active">
+  <div class="panel">
+    <div class="logo">CRICKET <span>ODD EVEN</span></div>
+    <div class="subtitle">Build your score. Outs end the innings. Beat your high score.</div>
+    <div class="grid">
+      <button class="mode" data-mode="standard"><b>🏏 Standard</b><small>Different numbers = batter's number as runs. Same number = OUT.</small></button>
+      <button class="mode" data-mode="deluxe"><b>⚡ Deluxe</b><small>Numbers one apart = OUT. Otherwise batter × bowler = runs.</small></button>
+      <button class="mode" data-mode="blitz"><b>🔥 Blitz</b><small>Race to a target before you lose 3 wickets. Faster rounds.</small></button>
+      <button class="mode" data-mode="master"><b>👑 Master</b><small>Hard rules: numbers one apart are OUT, and the computer reads your patterns.</small></button>
+    </div>
+    <div id="difficultyBox" class="hidden">
+      <h3 style="text-align:center;margin:22px 0 8px">Choose difficulty</h3>
+      <div class="grid">
+        <button class="diff" data-diff="easy"><b>🟢 Easy</b><small>Computer makes more predictable choices.</small></button>
+        <button class="diff" data-diff="normal"><b>🔵 Normal</b><small>Balanced computer.</small></button>
+        <button class="diff" data-diff="hard"><b>🟠 Hard</b><small>Computer adapts more strongly.</small></button>
+        <button class="diff" data-diff="legend"><b>🔴 Legend</b><small>Maximum challenge.</small></button>
+      </div>
+    </div>
+    <div class="highscores">
+      <h3>🏆 High Scores</h3>
+      <div id="highScoreList"></div>
+      <div style="text-align:center;margin-top:12px"><button id="clearScores" class="btn danger">Clear high scores</button></div>
+    </div>
+    <div class="footer">Standalone offline game • No external scripts, images, ads, or downloads</div>
+  </div>
+</section>
+
+<section id="toss" class="screen">
+  <div class="panel">
+    <div class="topbar"><button class="btn" id="backHome">← Home</button><span class="badge" id="modeBadge"></span></div>
+    <h2 style="text-align:center">🪙 Toss</h2>
+    <p style="text-align:center;color:var(--muted)">Pick Odd or Even, then choose your number.</p>
+    <div class="tossBtns"><button class="btn primary" data-toss="odd">ODD</button><button class="btn primary" data-toss="even">EVEN</button></div>
+    <div id="tossNumbers" class="choices"></div>
+    <div id="tossResult" class="message"></div>
+  </div>
+</section>
+
+<section id="setup" class="screen">
+  <div class="panel">
+    <h2 style="text-align:center">Choose your side</h2>
+    <p id="setupText" style="text-align:center;color:var(--muted)"></p>
+    <div class="choiceRow"><button class="btn primary" id="batBtn">🏏 Bat</button><button class="btn primary" id="bowlBtn">🧤 Bowl</button></div>
+  </div>
+</section>
+
+<section id="game" class="screen">
+  <div class="panel">
+    <div class="topbar"><span class="badge" id="gameMode"></span><span class="badge" id="difficultyBadge"></span></div>
+    <div class="scoreboard">
+      <div class="stat"><b id="score">0</b><small>RUNS</small></div>
+      <div class="stat"><b id="wickets">0</b><small>WICKETS</small></div>
+      <div class="stat"><b id="target">—</b><small>TARGET</small></div>
+    </div>
+    <div id="inningsLabel" style="text-align:center;color:var(--muted);font-weight:800"></div>
+    <div id="message" class="message">Choose your number</div>
+    <div id="numberGrid" class="choices"></div>
+    <div id="turnHint" class="label">Your fist = batter's number</div>
+  </div>
+</section>
+
+<section id="result" class="screen">
+  <div class="panel result">
+    <div id="resultEmoji" class="big">🏆</div>
+    <h2 id="resultTitle">Game Over</h2>
+    <p id="resultText" style="color:var(--muted)"></p>
+    <div class="scoreboard">
+      <div class="stat"><b id="finalScore">0</b><small>RUNS</small></div>
+      <div class="stat"><b id="finalWickets">0</b><small>WICKETS</small></div>
+      <div class="stat"><b id="finalHigh">0</b><small>HIGH SCORE</small></div>
+    </div>
+    <button id="playAgain" class="btn primary">Play Again</button>
+    <button id="resultHome" class="btn" style="margin-left:8px">Home</button>
+  </div>
+</section>
+
+</div>
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+const screens = ["home","toss","setup","game","result"];
+const modes = {
+  standard:{name:"Standard",rule:"standard"},
+  deluxe:{name:"Deluxe",rule:"deluxe"},
+  blitz:{name:"Blitz",rule:"blitz"},
+  master:{name:"Master",rule:"master"}
+};
+let state = {mode:"standard",difficulty:"normal",tossChoice:null,tossNumber:null,playerBatting:true,innings:1,score:0,wickets:0,target:null,computerScore:0,computerWickets:0,history:[],lastComputer:null,gameOver:false};
+
+function show(id){screens.forEach(s=>$(s).classList.remove("active"));$(id).classList.add("active");}
+function modeName(){return modes[state.mode].name}
+function say(text,kind=""){const el=$("message");el.textContent=text;el.className="message "+kind;void el.offsetWidth;el.classList.add("flash")}
+function sound(type){
+  try{
+    const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+    const c=new C(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);
+    const f={click:420,run:720,out:180,win:900,lose:120}[type]||400;
+    o.frequency.value=f;o.type=type==="out"?"sawtooth":"sine";g.gain.setValueAtTime(.0001,c.currentTime);g.gain.exponentialRampToValueAtTime(.07,c.currentTime+.01);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.16);o.start();o.stop(c.currentTime+.18);
+  }catch(e){}
+}
+function populateNumbers(container,handler){
+  $(container).innerHTML="";
+  for(let n=1;n<=10;n++){
+    const b=document.createElement("button");b.className="num";b.innerHTML='<span class="hand">✊</span>'+n;
+    b.addEventListener("click",()=>handler(n));$(container).appendChild(b);
+  }
+}
+function scores(){
+  let a=[];try{a=JSON.parse(localStorage.getItem("coeHighScores")||"[]")}catch(e){}
+  return Array.isArray(a)?a:[];
+}
+function saveScore(){
+  const arr=scores();
+  arr.push({score:state.score,mode:modeName(),difficulty:state.difficulty,date:new Date().toLocaleDateString()});
+  arr.sort((a,b)=>b.score-a.score);localStorage.setItem("coeHighScores",JSON.stringify(arr.slice(0,8)));renderScores();
+}
+function renderScores(){
+  const arr=scores();$("highScoreList").innerHTML=arr.length?arr.map((x,i)=>`<div class="hsrow"><span>#${i+1} ${x.mode} (${x.difficulty})</span><b>${x.score}</b></div>`).join(""):'<div style="text-align:center;color:#71829c">No scores yet — make the first one!</div>';
+}
+function startMode(m){
+  state.mode=m;state.difficulty="normal";$("difficultyBox").classList.remove("hidden");
+  $("modeBadge").textContent=modeName();show("home");
+  document.querySelectorAll(".mode").forEach(x=>x.style.outline=x.dataset.mode===m?"2px solid #45e0ff":"");
+}
+function chooseDifficulty(d){
+  state.difficulty=d;state.tossChoice=null;state.tossNumber=null;state.playerBatting=true;state.innings=1;state.score=0;state.wickets=0;state.target=null;state.computerScore=0;state.computerWickets=0;state.history=[];state.lastComputer=null;state.gameOver=false;
+  $("modeBadge").textContent=modeName();$("difficultyBadge").textContent=d.toUpperCase();show("toss");$("tossResult").textContent="";
+}
+function tossPick(choice){state.tossChoice=choice;$("tossResult").textContent="Now choose your toss number."}
+function doToss(n){
+  if(!state.tossChoice)return;
+  state.tossNumber=n;const cpu=computerNumber();const sum=n+cpu;const win=(sum%2===0?"even":"odd")===state.tossChoice;
+  sound("click");
+  $("tossResult").textContent=`You: ${n} • Computer: ${cpu} • ${sum} is ${sum%2?"ODD":"EVEN"}`;
+  if(win){$("tossResult").className="message good";$("setupText").textContent="You won the toss. Choose what to do.";show("setup")}
+  else{state.playerBatting=Math.random()<.5;$("setupText").textContent=`Computer won the toss and chose to ${state.playerBatting?"bowl":"bat"}.`;setTimeout(()=>beginGame(),550)}
+}
+function computerNumber(){
+  const d=state.difficulty;
+  if(state.mode==="master" && state.history.length>=3 && Math.random()<.68){
+    const counts={};state.history.forEach(x=>counts[x]=(counts[x]||0)+1);let best=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];return Math.max(1,Math.min(10,Number(best)+(Math.random()<.5?0:1)));
+  }
+  if(d==="easy")return 1+Math.floor(Math.random()*10);
+  if(d==="normal")return 1+Math.floor(Math.random()*10);
+  if(d==="hard")return Math.random()<.35 && state.history.length?state.history[state.history.length-1]:1+Math.floor(Math.random()*10);
+  return Math.random()<.55 && state.history.length?state.history[Math.floor(Math.random()*state.history.length)]:1+Math.floor(Math.random()*10);
+}
+$("numberGrid").innerHTML="";
+populateNumbers("tossNumbers",doToss);
+populateNumbers("numberGrid",play);
+
+document.querySelectorAll(".mode").forEach(b=>b.addEventListener("click",()=>startMode(b.dataset.mode)));
+document.querySelectorAll(".diff").forEach(b=>b.addEventListener("click",()=>chooseDifficulty(b.dataset.diff)));
+document.querySelectorAll("[data-toss]").forEach(b=>b.addEventListener("click",()=>tossPick(b.dataset.toss)));
+$("backHome").addEventListener("click",()=>{ $("difficultyBox").classList.add("hidden"); show("home"); });
+$("batBtn").addEventListener("click",()=>{state.playerBatting=true;beginGame()});
+$("bowlBtn").addEventListener("click",()=>{state.playerBatting=false;beginGame()});
+$("playAgain").addEventListener("click",()=>chooseDifficulty(state.difficulty));
+$("resultHome").addEventListener("click",()=>show("home"));
+$("clearScores").addEventListener("click",()=>{localStorage.removeItem("coeHighScores");renderScores()});
+
+function beginGame(){
+  state.innings=1;state.score=0;state.wickets=0;state.target=null;state.computerScore=0;state.computerWickets=0;state.history=[];state.gameOver=false;
+  $("gameMode").textContent=modeName();$("difficultyBadge").textContent=state.difficulty.toUpperCase();
+  renderGame();show("game");
+}
+function renderGame(){
+  $("score").textContent=state.playerBatting?state.score:state.computerScore;
+  $("wickets").textContent=state.playerBatting?state.wickets:state.computerWickets;
+  $("target").textContent=state.target??"—";
+  $("inningsLabel").textContent=state.innings===1?"1st innings":"2nd innings";
+  $("turnHint").textContent=state.playerBatting?"Your fist = batter's number":"Your fist = bowler's number";
+  say("Choose your number");
+}
+function ruleResult(batter,bowler){
+  if(state.mode==="standard") return batter===bowler?{out:true,runs:0}: {out:false,runs:batter};
+  if(Math.abs(batter-bowler)===1) return {out:true,runs:0};
+  return {out:false,runs:state.mode==="blitz"?Math.min(50,batter*bowler):batter*bowler};
+}
+function play(n){
+  if(state.gameOver)return;sound("click");
+  const cpu=computerNumber();state.lastComputer=cpu;
+  const batter=state.playerBatting?n:cpu,bowler=state.playerBatting?cpu:n;
+  state.history.push(n);
+  const r=ruleResult(batter,bowler);
+  if(r.out){
+    sound("out");
+    if(state.playerBatting)state.wickets++;else state.computerWickets++;
+    say(`OUT! ${batter} vs ${bowler}`,"bad");
+  }else{
+    sound("run");
+    if(state.playerBatting)state.score+=r.runs;else state.computerScore+=r.runs;
+    say(`+${r.runs} RUNS`,"good");
+  }
+  checkEnd();
+}
+function checkEnd(){
+  const wickets=state.playerBatting?state.wickets:state.computerWickets;
+  const score=state.playerBatting?state.score:state.computerScore;
+  const maxW=state.mode==="blitz"?3:5;
+  if(state.target!==null && score>=state.target){finish(true,`Target reached with ${Math.max(0,maxW-wickets)} wickets left.`);return}
+  if(wickets>=maxW){
+    if(state.innings===1){
+      state.target=score+1;state.innings=2;state.playerBatting=!state.playerBatting;
+      setTimeout(()=>{renderGame();$("message").textContent=`Target: ${state.target}`},600);
+    }else finish(score>=state.target,score>=state.target?"Target chased!":"Target not reached.");
+    return;
+  }
+  if(state.innings===2 && state.target!==null && score>=state.target)finish(true,"Target chased!");
+  else setTimeout(renderGame,180);
+}
+function finish(win,text){
+  state.gameOver=true;saveScore();const high=scores()[0]?.score||state.score;
+  $("resultEmoji").textContent=win?"🏆":"🏏";$("resultTitle").textContent=win?"YOU WIN!":"INNINGS OVER";
+  $("resultText").textContent=`${text} Final score: ${state.playerBatting?state.score:state.computerScore}.`;
+  $("finalScore").textContent=state.playerBatting?state.score:state.computerScore;
+  $("finalWickets").textContent=state.playerBatting?state.wickets:state.computerWickets;$("finalHigh").textContent=high;show("result");sound(win?"win":"lose");
+}
+renderScores();
+</script>
+</body>
+</html>
